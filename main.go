@@ -1,22 +1,27 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 )
 
+func healthzHandler(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprint(res, "OK")
+}
+
 func main() {
 	const port = "8080"
 	const staticDir = "."
-	const assetsDir = "assets"
 
 	mux := http.NewServeMux()
 
-	fs := http.FileServer(http.Dir(staticDir))
-	fsAssets := http.FileServer(http.Dir(assetsDir))
+	mux.HandleFunc("/healthz", healthzHandler)
 
-	mux.Handle("/", fs)
-	mux.Handle("/assets", fsAssets)
+	staticFiles := http.FileServer(http.Dir(staticDir))
+	mux.Handle("/app/", http.StripPrefix("/app", staticFiles))
 
 	srv := &http.Server{
 		Addr:    ":" + port,
