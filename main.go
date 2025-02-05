@@ -1,16 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 )
-
-func healthzHandler(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	res.WriteHeader(http.StatusOK)
-	fmt.Fprint(res, "OK")
-}
 
 func main() {
 	const port = "8080"
@@ -18,10 +12,18 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/healthz", healthzHandler)
+	mux.HandleFunc("/healthz", handlerHealth)
+
+	apiCfg := &apiConfig{
+		fileserverHits: atomic.Int32{},
+	}
 
 	staticFiles := http.FileServer(http.Dir(staticDir))
-	mux.Handle("/app/", http.StripPrefix("/app", staticFiles))
+	staticHandler := http.StripPrefix("/app", staticFiles)
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(staticHandler))
+
+	mux.HandleFunc("/metrics", apiCfg.fileServerHitsHandler)
+	mux.HandleFunc("/reset", apiCfg.fileServerHitsResetHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
