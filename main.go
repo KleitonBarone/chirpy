@@ -12,7 +12,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", handlerHealth)
+	mux.HandleFunc("GET /api/healthz", handlerHealth)
 
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
@@ -22,8 +22,8 @@ func main() {
 	staticHandler := http.StripPrefix("/app", staticFiles)
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(staticHandler))
 
-	mux.HandleFunc("GET /metrics", apiCfg.fileServerHitsHandler)
-	mux.HandleFunc("POST /reset", apiCfg.fileServerHitsResetHandler)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.fileServerHitsHandler)
+	mux.HandleFunc("POST /admin/reset", apiCfg.fileServerHitsResetHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
