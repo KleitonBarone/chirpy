@@ -6,6 +6,10 @@ import (
 	"sync/atomic"
 )
 
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
 func main() {
 	const port = "8080"
 	const staticDir = "."
@@ -24,6 +28,8 @@ func main() {
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.fileServerHitsHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.fileServerHitsResetHandler)
+
+	mux.HandleFunc("POST /api/validate_chirp", apiCfg.validateChirpHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
