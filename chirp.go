@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Request) {
@@ -61,12 +62,15 @@ func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Re
 		return
 	}
 
+	blockedWords := []string{"kerfuffle", "sharbert", "fornax"}
+	cleanedBody := getCleanedBody(params.Body, blockedWords)
+
 	type returnVals struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	respBody := returnVals{
-		Valid: true,
+		CleanedBody: cleanedBody,
 	}
 	data, err := json.Marshal(respBody)
 	if err != nil {
@@ -77,4 +81,18 @@ func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Re
 
 	res.WriteHeader(200)
 	res.Write(data)
+}
+
+func getCleanedBody(body string, badWords []string) string {
+	words := strings.Split(body, " ")
+	for i, word := range words {
+		loweredWord := strings.ToLower(word)
+		for _, badWord := range badWords {
+			if strings.Contains(loweredWord, badWord) {
+				words[i] = "****"
+			}
+		}
+	}
+	cleaned := strings.Join(words, " ")
+	return cleaned
 }
