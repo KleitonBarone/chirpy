@@ -15,13 +15,14 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
+	platform       string
 }
 
 func main() {
 	godotenv.Load()
 
 	dbURL := os.Getenv("DB_URL")
-
+	platform := os.Getenv("PLATFORM")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
@@ -39,6 +40,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
+		platform:       platform,
 	}
 
 	staticFiles := http.FileServer(http.Dir(staticDir))
@@ -49,6 +51,7 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", apiCfg.fileServerHitsResetHandler)
 
 	mux.HandleFunc("POST /api/validate_chirp", apiCfg.validateChirpHandler)
+	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

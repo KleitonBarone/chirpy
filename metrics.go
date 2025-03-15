@@ -27,8 +27,19 @@ func (cfg *apiConfig) fileServerHitsHandler(res http.ResponseWriter, _ *http.Req
 	`, cfg.fileserverHits.Load())))
 }
 
-func (cfg *apiConfig) fileServerHitsResetHandler(res http.ResponseWriter, _ *http.Request) {
-	cfg.fileserverHits.Store(0)
+func (cfg *apiConfig) fileServerHitsResetHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if cfg.platform != "dev" {
+		res.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	err := cfg.dbQueries.RemoveAllUsers(req.Context())
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	cfg.fileserverHits.Store(0)
 	res.WriteHeader(http.StatusOK)
 }
