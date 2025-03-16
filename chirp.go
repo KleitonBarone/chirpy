@@ -2,11 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/KleitonBarone/chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) createChirpHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 
 	type returnErr struct {
@@ -14,7 +19,8 @@ func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Re
 	}
 
 	type parameters struct {
-		Body string `json:"body"`
+		Body   string `json:"body"`
+		UserId string `json:"user_id"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -65,21 +71,45 @@ func (cfg *apiConfig) validateChirpHandler(res http.ResponseWriter, req *http.Re
 	blockedWords := []string{"kerfuffle", "sharbert", "fornax"}
 	cleanedBody := getCleanedBody(params.Body, blockedWords)
 
-	type returnVals struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-
-	respBody := returnVals{
-		CleanedBody: cleanedBody,
-	}
-	data, err := json.Marshal(respBody)
+	userID, err := uuid.Parse(params.UserId)
 	if err != nil {
-
+		log.Println(err)
 		res.WriteHeader(500)
 		return
 	}
 
-	res.WriteHeader(200)
+	chirp, err := cfg.dbQueries.CreateChirp(req.Context(), database.CreateChirpParams{
+		Body:   cleanedBody,
+		UserID: userID,
+	})
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(500)
+		return
+	}
+
+	type returnVals struct {
+		ID        string `json:"id"`
+		Body      string `json:"body"`
+		UserID    string `json:"user_id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	respBody := returnVals{
+		ID:        chirp.ID.String(),
+		Body:      chirp.Body,
+		UserID:    chirp.UserID.String(),
+		CreatedAt: chirp.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: chirp.UpdatedAt.Format(time.RFC3339),
+	}
+	data, err := json.Marshal(respBody)
+	if err != nil {
+		res.WriteHeader(500)
+		return
+	}
+
+	res.WriteHeader(201)
 	res.Write(data)
 }
 

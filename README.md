@@ -20,14 +20,27 @@ sudo -u postgres psql
 CREATE DATABASE chirpy;
 ALTER USER postgres PASSWORD 'postgres';
 SELECT version();
-exit;
+exit
 psql "postgres://postgres:postgres@localhost:5432/chirpy"
 ```
 
 goose for migration:
 ```
 go install github.com/pressly/goose/v3/cmd/goose@latest
-goose postgres <connection_string> up
+cd sql/schema
+goose postgres postgres://postgres:postgres@localhost:5432/chirpy up
 psql chirpy
 \dt
+```
+
+generate ORM queries:
+```
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+sqlc version
+sqlc generate
+```
+
+build and run:
+```
+go build -o out && ./out
 ```
