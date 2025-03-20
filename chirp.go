@@ -126,3 +126,43 @@ func getCleanedBody(body string, badWords []string) string {
 	cleaned := strings.Join(words, " ")
 	return cleaned
 }
+
+func (cfg *apiConfig) getChirpsHandler(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+
+	chirps, err := cfg.dbQueries.GetChirps(req.Context())
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(500)
+		return
+	}
+
+	type returnVals struct {
+		ID        string `json:"id"`
+		Body      string `json:"body"`
+		UserID    string `json:"user_id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	respBody := []returnVals{}
+
+	for _, chirp := range chirps {
+		respBody = append(respBody, returnVals{
+			ID:        chirp.ID.String(),
+			Body:      chirp.Body,
+			UserID:    chirp.UserID.String(),
+			CreatedAt: chirp.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: chirp.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+
+	data, err := json.Marshal(respBody)
+	if err != nil {
+		res.WriteHeader(500)
+		return
+	}
+
+	res.WriteHeader(200)
+	res.Write(data)
+}
