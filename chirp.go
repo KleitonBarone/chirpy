@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -155,6 +156,54 @@ func (cfg *apiConfig) getChirpsHandler(res http.ResponseWriter, req *http.Reques
 			CreatedAt: chirp.CreatedAt.Format(time.RFC3339),
 			UpdatedAt: chirp.UpdatedAt.Format(time.RFC3339),
 		})
+	}
+
+	data, err := json.Marshal(respBody)
+	if err != nil {
+		res.WriteHeader(500)
+		return
+	}
+
+	res.WriteHeader(200)
+	res.Write(data)
+}
+
+func (cfg *apiConfig) getChirpHandler(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+
+	chirpID := req.PathValue("chirpID")
+	chirpIdUUID, err := uuid.Parse(chirpID)
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(500)
+		return
+	}
+
+	chirp, err := cfg.dbQueries.GetChirp(req.Context(), chirpIdUUID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			res.WriteHeader(404)
+			return
+		}
+		log.Println(err)
+		res.WriteHeader(500)
+		return
+	}
+
+	type returnVals struct {
+		ID        string `json:"id"`
+		Body      string `json:"body"`
+		UserID    string `json:"user_id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	respBody := returnVals{
+		ID:        chirp.ID.String(),
+		Body:      chirp.Body,
+		UserID:    chirp.UserID.String(),
+		CreatedAt: chirp.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: chirp.UpdatedAt.Format(time.RFC3339),
 	}
 
 	data, err := json.Marshal(respBody)
