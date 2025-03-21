@@ -265,7 +265,36 @@
             "name": ""
           },
           "text": {
-            "value": "{\n  \"email\": \"teste1@example.com\"\n}",
+            "value": "{\n  \"email\": \"teste2@example.com\",\n  \"password\": \"teste\"\n}",
+            "format": "application/json"
+          },
+          "form": {
+            "isMultipart": false,
+            "fields": []
+          },
+          "graphql": {
+            "query": "",
+            "variables": ""
+          }
+        }
+      },
+      {
+        "name": "",
+        "url": "localhost:8080/api/login",
+        "method": "POST",
+        "headers": [],
+        "queryParams": [],
+        "pathParams": [],
+        "auth": {
+          "type": "inherited"
+        },
+        "body": {
+          "type": "text",
+          "file": {
+            "name": ""
+          },
+          "text": {
+            "value": "{\n  \"email\": \"teste1@example.com\",\n  \"password\": \"teste\"\n}",
             "format": "application/json"
           },
           "form": {
