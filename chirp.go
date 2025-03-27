@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KleitonBarone/chirpy/internal/auth"
 	"github.com/KleitonBarone/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -19,14 +20,26 @@ func (cfg *apiConfig) createChirpHandler(res http.ResponseWriter, req *http.Requ
 		Error string `json:"error"`
 	}
 
+	jwtToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(401)
+		return
+	}
+	userID, err := auth.ValidateJWT(jwtToken, cfg.jwtSecret)
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(401)
+		return
+	}
+
 	type parameters struct {
-		Body   string `json:"body"`
-		UserId string `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respBody := returnErr{
 			Error: "Invalid JSON",
@@ -71,13 +84,6 @@ func (cfg *apiConfig) createChirpHandler(res http.ResponseWriter, req *http.Requ
 
 	blockedWords := []string{"kerfuffle", "sharbert", "fornax"}
 	cleanedBody := getCleanedBody(params.Body, blockedWords)
-
-	userID, err := uuid.Parse(params.UserId)
-	if err != nil {
-		log.Println(err)
-		res.WriteHeader(500)
-		return
-	}
 
 	chirp, err := cfg.dbQueries.CreateChirp(req.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,

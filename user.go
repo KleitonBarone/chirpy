@@ -102,8 +102,9 @@ func (cfg *apiConfig) loginHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds *int   `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -149,11 +150,27 @@ func (cfg *apiConfig) loginHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if params.ExpiresInSeconds == nil {
+		params.ExpiresInSeconds = new(int)
+	}
+
+	if *params.ExpiresInSeconds < 1 || *params.ExpiresInSeconds > 3600 {
+		*params.ExpiresInSeconds = 3600
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(*params.ExpiresInSeconds)*time.Second)
+	if err != nil {
+		log.Println(err)
+		res.WriteHeader(500)
+		return
+	}
+
 	type returnVals struct {
 		Id        string `json:"id"`
 		Email     string `json:"email"`
 		CreatedAt string `json:"created_at"`
 		UpdatedAt string `json:"updated_at"`
+		Token     string `json:"token"`
 	}
 
 	respBody := returnVals{
@@ -161,6 +178,7 @@ func (cfg *apiConfig) loginHandler(res http.ResponseWriter, req *http.Request) {
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
+		Token:     token,
 	}
 	data, err := json.Marshal(respBody)
 	if err != nil {

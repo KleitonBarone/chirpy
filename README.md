@@ -9,6 +9,7 @@ Make sure to have:
 ```
 DB_URL="postgres://postgres:postgres@localhost:5432/chirpy?sslmode=disable"
 PLATFORM="dev"
+JWT_SECRET="secret"
 ```
 
 postgres running (linux setup example):
@@ -43,4 +44,9 @@ sqlc generate
 build and run:
 ```
 go build -o out && ./out
+```
+
+run all tests:
+```
+go test -v ./...
 ```
