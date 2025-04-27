@@ -1,0 +1,22 @@
+meta {
+  name: Login
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{BASE_URL}}/api/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "teste2@example.com",
+    "password": "teste"
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("BEARER_TOKEN",res.getBody().token)
+}

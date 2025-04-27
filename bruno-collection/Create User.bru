@@ -1,0 +1,18 @@
+meta {
+  name: Create User
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{BASE_URL}}/api/users
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "teste2@example.com",
+    "password": "teste"
+  }
+}

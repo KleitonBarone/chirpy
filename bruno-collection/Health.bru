@@ -1,0 +1,11 @@
+meta {
+  name: Health
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/api/healthz
+  body: none
+  auth: inherit
+}

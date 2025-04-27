@@ -1,0 +1,17 @@
+meta {
+  name: Create Chirp
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{BASE_URL}}/api/chirps
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "body": "test chirp"
+  }
+}
