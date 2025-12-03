@@ -61,22 +61,14 @@ Chirpy is a social media API built with Go. It allows users to create accounts, 
    > docker exec -it chirpy-db psql -U postgres -d chirpy
    > ```
 
-2. Install Goose:
+2. Run migrations:
    ```bash
-   go install github.com/pressly/goose/v3/cmd/goose@latest
-   ```
-
-3. Run migrations:
-   ```bash
-   cd sql/schema
-   goose postgres "postgres://postgres:postgres@localhost:5432/chirpy" up
-   cd ../..
+   go run github.com/pressly/goose/v3/cmd/goose -dir sql/schema postgres "postgres://postgres:postgres@localhost:5432/chirpy?sslmode=disable" up
    ```
 
 4. (Optional) Generate SQLC code:
    ```bash
-   go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-   sqlc generate
+   go run github.com/sqlc-dev/sqlc/cmd/sqlc generate
    ```
 
 ### Running the Application
