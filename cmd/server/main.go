@@ -5,19 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync/atomic"
 
+	"github.com/KleitonBarone/chirpy/internal/config"
 	"github.com/KleitonBarone/chirpy/internal/database"
+	"github.com/KleitonBarone/chirpy/internal/handler"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-	dbQueries      *database.Queries
-	platform       string
-	jwtSecret      string
-}
 
 func main() {
 	godotenv.Load()
@@ -47,27 +41,28 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /api/healthz", handlerHealth)
+	apiCfg := config.NewApiConfig(dbQueries, platform, jwtSecret)
 
-	apiCfg := &apiConfig{
-		fileserverHits: atomic.Int32{},
-		dbQueries:      dbQueries,
-		platform:       platform,
-		jwtSecret:      jwtSecret,
-	}
+	// Health check
+	mux.HandleFunc("GET /api/healthz", handler.HandlerHealth)
 
+	// Static files
 	staticFiles := http.FileServer(http.Dir(staticDir))
 	staticHandler := http.StripPrefix("/app", staticFiles)
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(staticHandler))
+	mux.Handle("/app/", handler.MiddlewareMetricsInc(apiCfg, staticHandler))
 
-	mux.HandleFunc("GET /admin/metrics", apiCfg.fileServerHitsHandler)
-	mux.HandleFunc("POST /admin/reset", apiCfg.fileServerHitsResetHandler)
+	// Admin endpoints
+	mux.HandleFunc("GET /admin/metrics", handler.FileServerHitsHandler(apiCfg))
+	mux.HandleFunc("POST /admin/reset", handler.FileServerHitsResetHandler(apiCfg))
 
-	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
-	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpHandler)
-	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
-	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
-	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
+	// Chirp endpoints
+	mux.HandleFunc("POST /api/chirps", handler.CreateChirpHandler(apiCfg))
+	mux.HandleFunc("GET /api/chirps/{chirpID}", handler.GetChirpHandler(apiCfg))
+	mux.HandleFunc("GET /api/chirps", handler.GetChirpsHandler(apiCfg))
+
+	// User endpoints
+	mux.HandleFunc("POST /api/users", handler.CreateUserHandler(apiCfg))
+	mux.HandleFunc("POST /api/login", handler.LoginHandler(apiCfg))
 
 	srv := &http.Server{
 		Addr:    ":" + port,

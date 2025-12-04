@@ -25,8 +25,6 @@ Chirpy is a social media API built with Go. It allows users to create accounts, 
 
 - Go 1.23+
 - Docker
-- [Goose](https://github.com/pressly/goose) (for migrations)
-- [SQLC](https://sqlc.dev/) (for generating Go code from SQL)
 
 ### Installation
 
@@ -73,13 +71,36 @@ Chirpy is a social media API built with Go. It allows users to create accounts, 
 
 ### Running the Application
 
-Build and run the server:
+Run the server directly:
 
 ```bash
-go build -o out && ./out
+go run ./cmd/server
+```
+
+Or build and run:
+
+```bash
+go build -o out ./cmd/server && ./out
 ```
 
 The server will start on port `8080`.
+
+## Project Structure
+
+```
+chirpy/
+├── cmd/
+│   └── server/          # Application entry point
+├── internal/
+│   ├── auth/            # Authentication (JWT, passwords)
+│   ├── config/          # Application configuration
+│   ├── database/        # Database queries (sqlc generated)
+│   └── handler/         # HTTP handlers
+├── sql/
+│   ├── queries/         # SQLC query definitions
+│   └── schema/          # Database migrations
+└── bruno-collection/    # API testing collection
+```
 
 ### Running Tests
 
